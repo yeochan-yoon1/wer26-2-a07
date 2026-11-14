@@ -6,16 +6,15 @@
     <title>JavaScript Basic</title>
     
     <script>
-        // Data객체선언
-        let data=new Date();
-        // 요소추출
-        let year = date.getFullYear();
+        let date= new Date();
+        let year=date.getFullYear();
         let month=date.getMonth()+1;
         let day=date.getDate();
         let hours=date.getHours();
         let minutes=date.getMinutes();
         let seconds=date.getSeconds();
 
+        // alert(year+'년 '+month+'월 '+day+'일 '+hours+'시 '+minutes+'분 '+seconds+'초');
         alert(year + '-' + month + '-' + day +
          '-' + hours + '-' + minutes + '-' + seconds);
     </script>
