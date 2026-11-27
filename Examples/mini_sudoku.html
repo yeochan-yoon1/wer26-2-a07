@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>짧은 휴식 - 미니 스도쿠</title>
+
+    <!-- jQuery 라이브러리 -->
+    <script src="https://code.jquery.com/jquery-4.0.0.js"></script>
+
+    <!-- 1. 초기화: 교재 예제의 기본 구조 유지 -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "맑은 고딕", "Malgun Gothic", sans-serif; }
+        a { text-decoration: none; }
+        li { list-style: none; }
+        button, input, textarea, select { font: inherit; }
+        button { cursor: pointer; }
+    </style>
+
+    <!-- 2. 페이지 구성 -->
+    <style>
+        body { width: 960px; max-width: calc(100% - 24px); margin: 0 auto; background: #e6e6e6; color: #222; }
+        #page-wrapper { background: white; margin: 32px 0; padding: 10px 20px 22px; box-shadow: 0 2px 6px rgba(100,100,100,.3); border-radius: 8px; }
+        #content { overflow: hidden; }
+        #main-section { float: left; width: 710px; }
+        #main-aside { float: right; width: 200px; }
+        @media (max-width: 760px) {
+            body { width: auto; max-width: none; margin: 0 10px; }
+            #page-wrapper { margin: 10px 0; padding: 10px 14px 20px; }
+            #main-section, #main-aside { float: none; width: 100%; }
+            #main-navigation { height: auto !important; min-height: 40px; overflow: visible; }
+            .search-bar { display: none; }
+        }
+    </style>
+
+    <!-- 3. 헤더 구성 -->
+    <style>
+        #main-header { padding: 12px 0 18px; color: #181818; }
+        .master-title { font-size: 28px; }
+        .master-description { margin-top: 4px; font-size: 14px; font-weight: 500; color: #687386; }
+    </style>
+
+    <!-- 4. 내비게이션 및 풀다운 메뉴: 교재의 hover 메뉴 유지 -->
+    <style>
+        #main-navigation { border-top: 1px solid #c8c8c8; border-bottom: 1px solid #c8c8c8; margin-bottom: 20px; height: 42px; }
+        .pull-left { float: left; }
+        .pull-right { float: right; }
+        .outer-menu-item { float: left; position: relative; }
+        .outer-menu-item:hover { background: #202a44; color: white; }
+        .menu-title { display: block; height: 40px; line-height: 40px; text-align: center; padding: 0 17px; font-size: 14px; }
+        .inner-menu { display: none; position: absolute; top: 40px; left: 0; width: 130px; background: white; box-shadow: 0 2px 6px rgba(5,5,5,.25); z-index: 1000; text-align: center; }
+        .inner-menu-item > a { display: block; padding: 8px 10px; color: #222; font-size: 13px; }
+        .inner-menu-item > a:hover { background: #202a44; color: white; }
+        .search-form { height: 26px; padding: 7px 0; }
+        .input-search { width: 112px; height: 26px; padding: 0 9px; border: 1px solid #ccc; border-radius: 15px 0 0 15px; font-size: 12px; }
+        .input-search-submit { height: 26px; padding: 0 9px; margin-left: -5px; border: 1px solid #ccc; border-radius: 0 15px 15px 0; background: #f5f6f8; font-size: 12px; }
+    </style>
+
+    <!-- 5. 본문과 사이드바 -->
+    <style>
+        article { padding: 0 10px 20px; border-bottom: 1px solid #e1e4e8; }
+        .article-header { padding: 8px 0 17px; }
+        .article-title { font-size: 22px; font-weight: 600; padding-bottom: 6px; }
+        .article-description { font-size: 13px; color: #707987; }
+        .article-body { font-size: 14px; }
+        .intro { line-height: 1.7; color: #4b5563; margin-bottom: 16px; }
+        .aside-list { padding: 10px 0 24px; }
+        .aside-list > h3 { font-size: 15px; font-weight: 600; padding-bottom: 8px; }
+        .aside-list li { margin: 7px 0; }
+        .aside-list li a { margin-left: 4px; font-size: 13px; color: #687386; }
+        .aside-list li a:hover { color: #3156a5; text-decoration: underline; }
+    </style>
+
+    <!-- 6. 스도쿠 화면 -->
+    <style>
+        .game-panel { background: #f7f8fb; border: 1px solid #e2e6ef; border-radius: 12px; padding: 15px; }
+        .game-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+        .difficulty-wrap { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+        #difficulty { padding: 7px 10px; border: 1px solid #cbd2df; border-radius: 7px; background: white; }
+        #level-description { font-size: 12px; color: #697386; }
+        .game-layout { display: flex; align-items: flex-start; gap: 16px; }
+        .board-wrap { flex: 0 0 414px; max-width: 100%; }
+        #sudoku-board { display: grid; grid-template-columns: repeat(9, 1fr); width: 100%; aspect-ratio: 1; border: 2px solid #26344f; background: white; }
+        /* 각 칸을 감싸는 영역: 굵은 선으로 3x3 구역을 구분한다. */
+        .cell-wrap { position: relative; min-width: 0; width: 100%; aspect-ratio: 1; border-right: 1px solid #cbd2df; border-bottom: 1px solid #cbd2df; background: white; }
+        .cell-wrap:nth-child(3n) { border-right: 2px solid #26344f; }
+        .cell-wrap:nth-child(9n) { border-right: 0; }
+        .cell-wrap:nth-child(n+19):nth-child(-n+27), .cell-wrap:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid #26344f; }
+        .cell-wrap:nth-child(n+73) { border-bottom: 0; }
+        .cell { display: block; min-width: 0; width: 100%; height: 100%; border: 0; border-radius: 0; text-align: center; font-size: clamp(13px, 2vw, 20px); color: #253653; background: white; outline: none; padding: 0; }
+        /* 메모로 등록한 후보 숫자를 칸의 오른쪽 위에 작게 표시한다. */
+        .cell-memo { position: absolute; top: 2px; right: 3px; color: #7656a6; font-size: clamp(8px, 1vw, 11px); font-weight: 700; line-height: 1; pointer-events: none; }
+        .cell:focus { background: #e8efff; box-shadow: inset 0 0 0 2px #6688d8; }
+        .cell.given { background: #eef1f6; color: #18243a; font-weight: 700; }
+        .cell.invalid { background: #ffe5e5; color: #b42318; }
+        .cell.selected { background: #e3ecff; }
+        .side-controls { flex: 1; min-width: 170px; }
+        .control-title { font-size: 14px; font-weight: 700; margin: 2px 0 8px; }
+        .help-text { font-size: 12px; color: #697386; line-height: 1.6; margin-bottom: 12px; }
+        .number-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+        .number-button { border: 1px solid #cbd2df; background: white; border-radius: 7px; padding: 8px 0; color: #253653; }
+        .number-button:hover { background: #eaf0ff; }
+        .action-button { border: 0; border-radius: 7px; padding: 9px 10px; background: #263b68; color: white; font-size: 13px; }
+        .action-button:hover { background: #172747; }
+        .action-button.secondary { background: #e6eaf1; color: #26344f; }
+        .action-button.secondary:hover { background: #d8deea; }
+        .button-row { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 8px; }
+        .status { min-height: 42px; margin-top: 12px; padding: 9px 10px; border-radius: 7px; background: #edf2fb; color: #34496f; font-size: 12px; line-height: 1.5; }
+        .status.error { background: #fff0ef; color: #a52a22; }
+        .status.success { background: #eaf7ee; color: #20643a; }
+        .memo-area { margin-top: 15px; padding-top: 13px; border-top: 1px solid #dfe4ec; }
+        .post-area { margin-top: 15px; padding-top: 13px; border-top: 1px solid #dfe4ec; }
+        #post-title, #memo-input { width: 100%; min-height: 62px; resize: vertical; padding: 8px; border: 1px solid #cbd2df; border-radius: 7px; font-size: 12px; }
+        #memo-list { margin-top: 8px; padding-left: 17px; font-size: 12px; color: #4b5563; line-height: 1.7; overflow-wrap: anywhere; }
+        .record-box { margin-top: 14px; border: 1px solid #e2e6ef; border-radius: 9px; padding: 12px; background: white; }
+        .record-box h3 { font-size: 14px; margin-bottom: 7px; }
+        #record-list { font-size: 12px; line-height: 1.7; color: #5d6879; }
+        .small-note { margin-top: 10px; font-size: 11px; color: #7b8492; line-height: 1.6; }
+        @media (max-width: 680px) {
+            .game-layout { flex-direction: column; }
+            .board-wrap { flex-basis: auto; width: 100%; }
+            .side-controls { width: 100%; }
+        }
+    </style>
+
+    <!-- 7. jQuery 이벤트 등록 -->
+    <script>
+        $(document).ready(function () {
+            // [선택자: .outer-menu-item] 마우스를 올리면 해당 메뉴의 .inner-menu를 표시하고,
+            // 마우스를 벗어나면 숨김 처리한다. 교재 예제의 hover 동작을 유지한다.
+            $('.outer-menu-item').hover(function () {
+                $(this).find('.inner-menu').show();
+            }, function () {
+                $(this).find('.inner-menu').hide();
+            });
+
+            // 스도쿠 정답(완성된 9x9 배열). 난이도별로 같은 정답에서 빈칸 수만 다르게 구성한다.
+            var solution = [
+                [1,2,3,4,5,6,7,8,9],
+                [4,5,6,7,8,9,1,2,3],
+                [7,8,9,1,2,3,4,5,6],
+                [2,3,4,5,6,7,8,9,1],
+                [5,6,7,8,9,1,2,3,4],
+                [8,9,1,2,3,4,5,6,7],
+                [3,4,5,6,7,8,9,1,2],
+                [6,7,8,9,1,2,3,4,5],
+                [9,1,2,3,4,5,6,7,8]
+            ];
+
+            // 각 난이도에서 비울 칸의 개수. 빈칸은 정답 배열을 기준으로 채점한다.
+            var blankCounts = { easy: 30, normal: 42, hard: 54 };
+            var currentLevel = 'easy';
+            var selectedCell = null;
+            var memoCount = 0;
+            var records = [];
+            var givenBoard = [];
+            // 각 칸에 표시할 후보 숫자를 저장한다. 예: "3-7"은 4행 8열을 뜻한다.
+            var candidateNotes = {};
+
+            function makePuzzle(level) {
+                var count = blankCounts[level];
+                var board = [];
+                for (var r = 0; r < 9; r++) {
+                    board[r] = [];
+                    for (var c = 0; c < 9; c++) board[r][c] = solution[r][c];
+                }
+
+                // 일정한 간격으로 칸을 비우고, 난이도별 시작 위치를 달리해 보드를 만든다.
+                var removed = 0;
+                var start = level === 'easy' ? 0 : (level === 'normal' ? 7 : 14);
+                var step = level === 'hard' ? 5 : 7;
+                var index = start;
+                while (removed < count) {
+                    var pos = index % 81;
+                    var row = Math.floor(pos / 9);
+                    var col = pos % 9;
+                    if (board[row][col] !== 0) {
+                        board[row][col] = 0;
+                        removed++;
+                    }
+                    index += step;
+                }
+                return board;
+            }
+
+            function drawBoard() {
+                givenBoard = makePuzzle(currentLevel);
+                selectedCell = null;
+                $('#sudoku-board').empty();
+
+                // [선택자: #sudoku-board] 각 칸을 input.cell로 생성한다.
+                // 처음부터 숫자가 있는 칸에는 given 클래스를 붙여 수정하지 못하게 한다.
+                for (var r = 0; r < 9; r++) {
+                    for (var c = 0; c < 9; c++) {
+                        var value = givenBoard[r][c];
+                        var $cell = $('<input>', {
+                            type: 'text',
+                            maxlength: 1,
+                            inputmode: 'numeric',
+                            autocomplete: 'off',
+                            class: value === 0 ? 'cell' : 'cell given',
+                            'data-row': r,
+                            'data-col': c,
+                            'aria-label': (r + 1) + '행 ' + (c + 1) + '열'
+                        });
+                        if (value !== 0) {
+                            $cell.val(value).prop('readonly', true);
+                        }
+
+                        // input과 작은 메모 표시를 같은 칸 안에 넣기 위해 바깥 영역으로 감싼다.
+                        var $cellWrap = $('<div>', { class: 'cell-wrap' });
+                        var $cellMemo = $('<span>', { class: 'cell-memo' });
+                        var noteKey = r + '-' + c;
+                        if (candidateNotes[noteKey]) {
+                            $cellMemo.text(candidateNotes[noteKey].join(' '));
+                        }
+                        $cellWrap.append($cell).append($cellMemo);
+                        $('#sudoku-board').append($cellWrap);
+                    }
+                }
+                $('#level-description').text(
+                    currentLevel === 'easy' ? '쉬움 · 빈칸 30개 · 가볍게 시작해 보세요.' :
+                    currentLevel === 'normal' ? '보통 · 빈칸 42개 · 조금 더 집중해 보세요.' :
+                    '어려움 · 빈칸 54개 · 차근차근 도전해 보세요.'
+                );
+                $('#status-message').removeClass('error success').text('빈칸을 선택하고 숫자를 입력해 보세요. 숫자는 1~9만 사용할 수 있습니다.');
+            }
+
+            // 현재 보드의 숫자를 2차원 배열로 읽는다.
+            function readBoard() {
+                var board = [];
+                for (var r = 0; r < 9; r++) {
+                    board[r] = [];
+                    for (var c = 0; c < 9; c++) {
+                        var value = $('#sudoku-board .cell[data-row="' + r + '"][data-col="' + c + '"]').val();
+                        board[r][c] = value === '' ? 0 : Number(value);
+                    }
+                }
+                return board;
+            }
+
+            // 입력한 숫자가 같은 행, 열, 3x3 칸에 중복되는지 검사한다.
+            function hasConflict(row, col, value) {
+                var board = readBoard();
+                for (var i = 0; i < 9; i++) {
+                    if (i !== col && board[row][i] === value) return true;
+                    if (i !== row && board[i][col] === value) return true;
+                }
+                var startRow = Math.floor(row / 3) * 3;
+                var startCol = Math.floor(col / 3) * 3;
+                for (var rr = startRow; rr < startRow + 3; rr++) {
+                    for (var cc = startCol; cc < startCol + 3; cc++) {
+                        if ((rr !== row || cc !== col) && board[rr][cc] === value) return true;
+                    }
+                }
+                return false;
+            }
+
+            // [이벤트 1: change] 난이도 드롭다운을 바꾸면 보드와 안내 문구를 새로 만든다.
+            $('#difficulty').on('change', function () {
+                currentLevel = $(this).val();
+                drawBoard();
+            });
+
+            // [이벤트 2: input] 보드 숫자 입력 즉시 1~9인지, 같은 행/열/박스에 중복되는지 확인한다.
+            // 잘못된 값은 빨간색으로 표시하고 안내 문구를 바꾼다.
+            $('#sudoku-board').on('input', '.cell:not(.given)', function () {
+                var $cell = $(this);
+                var value = $cell.val();
+                var row = Number($cell.data('row'));
+                var col = Number($cell.data('col'));
+                $cell.removeClass('invalid');
+
+                if (value !== '' && !/^[1-9]$/.test(value)) {
+                    $cell.val('').addClass('invalid');
+                    $('#status-message').removeClass('success').addClass('error').text('잘못된 입력입니다. 1부터 9까지 숫자 한 개만 입력해 주세요.');
+                    return;
+                }
+                if (value !== '' && hasConflict(row, col, Number(value))) {
+                    $cell.addClass('invalid');
+                    $('#status-message').removeClass('success').addClass('error').text('중복된 숫자입니다. 같은 행, 열, 3×3 영역에 같은 숫자가 있는지 확인하세요.');
+                } else {
+                    $('#status-message').removeClass('error success').text(value === '' ? '숫자를 지웠습니다.' : '입력이 확인되었습니다. 계속 풀어 보세요.');
+                }
+            });
+
+            // [이벤트 3: click] 빈칸을 클릭하면 선택 칸을 표시하고 메모가 연결될 위치를 알려준다.
+            $('#sudoku-board').on('click', '.cell:not(.given)', function () {
+                $('#sudoku-board .cell').removeClass('selected');
+                $(this).addClass('selected');
+                selectedCell = { row: Number($(this).data('row')), col: Number($(this).data('col')) };
+                $('#memo-target').text((selectedCell.row + 1) + '행 ' + (selectedCell.col + 1) + '열');
+            });
+
+            // [이벤트 4: click] 숫자 버튼을 누르면 현재 선택된 빈칸에 숫자를 넣는다.
+            $('.number-button').on('click', function () {
+                if (selectedCell === null) {
+                    $('#status-message').removeClass('success').addClass('error').text('먼저 숫자를 입력할 빈칸을 선택해 주세요.');
+                    return;
+                }
+                var selector = '#sudoku-board .cell:not(.given)[data-row="' + selectedCell.row + '"][data-col="' + selectedCell.col + '"]';
+                $(selector).val($(this).data('number')).trigger('input');
+            });
+
+            // [이벤트 5: click] 지우기 버튼은 선택한 빈칸의 숫자를 지우고 유효성 표시도 초기화한다.
+            $('#clear-cell').on('click', function () {
+                if (selectedCell === null) {
+                    $('#status-message').removeClass('success').addClass('error').text('먼저 지울 빈칸을 선택해 주세요.');
+                    return;
+                }
+                var selector = '#sudoku-board .cell:not(.given)[data-row="' + selectedCell.row + '"][data-col="' + selectedCell.col + '"]';
+                $(selector).val('').removeClass('invalid').trigger('input').focus();
+            });
+
+            // [이벤트 6: click] 정답 확인 버튼은 모든 칸이 채워졌는지와 정답 배열이 일치하는지 확인한다.
+            $('#check-answer').on('click', function () {
+                var board = readBoard();
+                var empty = false;
+                var correct = true;
+                for (var r = 0; r < 9; r++) {
+                    for (var c = 0; c < 9; c++) {
+                        if (board[r][c] === 0) empty = true;
+                        if (board[r][c] !== solution[r][c]) correct = false;
+                    }
+                }
+                if (empty) {
+                    $('#status-message').removeClass('success').addClass('error').text('아직 빈칸이 남아 있습니다. 모든 칸을 채운 뒤 다시 확인해 주세요.');
+                } else if (correct) {
+                    var levelName = currentLevel === 'easy' ? '쉬움' : (currentLevel === 'normal' ? '보통' : '어려움');
+                    var message = levelName + ' 난이도 성공! 기록을 남겼습니다.';
+                    $('#status-message').removeClass('error').addClass('success').text(message);
+                    records.unshift(levelName + ' 난이도 - 정답 확인 완료');
+                    $('#record-list').empty();
+                    for (var i = 0; i < records.length; i++) $('#record-list').append($('<li>').text(records[i]));
+                } else {
+                    $('#status-message').removeClass('success').addClass('error').text('아직 정답이 아닙니다. 빨간색으로 표시된 중복이나 숫자를 다시 확인해 보세요.');
+                }
+            });
+
+            // [이벤트 7: click] 초기화 버튼은 현재 난이도의 처음 보드로 되돌리고 입력/메모를 비운다.
+            $('#reset-game').on('click', function () {
+                candidateNotes = {};
+                drawBoard();
+                $('#memo-input').val('');
+                $('#memo-list').empty();
+                memoCount = 0;
+                $('#memo-target').text('선택된 칸 없음');
+                $('#status-message').removeClass('error success').text('현재 난이도의 보드를 초기화했습니다.');
+            });
+
+            // [이벤트 8: input] 메모 입력 중 빈 값 여부를 확인해 등록 버튼 안내 상태를 갱신한다.
+            $('#memo-input').on('input', function () {
+                var text = $(this).val().trim();
+                $('#memo-help').text(text === '' ? '메모 내용을 입력해 주세요.' : '메모를 등록할 수 있습니다.');
+            });
+
+            // [이벤트 9: click] 메모 등록 버튼은 빈 값과 글자 수를 검사한다.
+            // "4행 8열 6" 형식이면 해당 칸의 오른쪽 위에 작은 후보 숫자를 표시한다.
+            // 그 형식이 아니면 기존처럼 선택 칸 또는 전체 메모 목록에 등록한다.
+            $('#add-memo').on('click', function () {
+                var memo = $('#memo-input').val().trim();
+                if (memo === '') {
+                    $('#memo-help').text('빈 메모는 등록할 수 없습니다.');
+                    $('#status-message').removeClass('success').addClass('error').text('메모를 등록하지 못했습니다. 내용을 입력해 주세요.');
+                    return;
+                }
+                if (memo.length > 120) {
+                    $('#memo-help').text('메모는 120자 이내로 작성해 주세요.');
+                    $('#status-message').removeClass('success').addClass('error').text('메모가 너무 깁니다. 120자 이내로 줄여 주세요.');
+                    return;
+                }
+
+                // 숫자 3개를 읽는다: 행, 열, 후보 숫자
+                var coordinateMatch = memo.match(/^(\d+)\s*행\s*(\d+)\s*열\s*(\d+)$/);
+                var target;
+                if (coordinateMatch) {
+                    var row = Number(coordinateMatch[1]);
+                    var col = Number(coordinateMatch[2]);
+                    var number = Number(coordinateMatch[3]);
+
+                    if (row < 1 || row > 9 || col < 1 || col > 9 || number < 1 || number > 9) {
+                        $('#memo-help').text('행, 열, 후보 숫자는 모두 1부터 9까지 입력해 주세요. 예: 4행 8열 6');
+                        $('#status-message').removeClass('success').addClass('error').text('메모 위치 또는 후보 숫자가 올바르지 않습니다.');
+                        return;
+                    }
+
+                    var noteKey = (row - 1) + '-' + (col - 1);
+                    if (!candidateNotes[noteKey]) candidateNotes[noteKey] = [];
+                    if (candidateNotes[noteKey].indexOf(number) === -1) {
+                        candidateNotes[noteKey].push(number);
+                        candidateNotes[noteKey].sort(function (a, b) { return a - b; });
+                    }
+
+                    var cellSelector = '#sudoku-board .cell[data-row="' + (row - 1) + '"][data-col="' + (col - 1) + '"]';
+                    $(cellSelector).siblings('.cell-memo').text(candidateNotes[noteKey].join(' '));
+                    target = row + '행 ' + col + '열 후보 숫자';
+                    $('#memo-help').text('후보 숫자가 해당 칸에 표시되었습니다.');
+                } else {
+                    target = selectedCell === null ? '전체 메모' : (selectedCell.row + 1) + '행 ' + (selectedCell.col + 1) + '열';
+                    $('#memo-help').text('메모가 등록되었습니다.');
+                }
+
+                memoCount++;
+                // 사용자가 입력한 문자열은 text()로 넣어 HTML 태그로 실행되지 않게 한다.
+                $('#memo-list').append($('<li>').text(target + ' : ' + memo));
+                $('#memo-input').val('');
+                $('#status-message').removeClass('error').addClass('success').text('메모 ' + memoCount + '개가 등록되었습니다.');
+            });
+
+            // [이벤트 10: input] 글 제목 입력 시 빈 값 여부를 확인해 등록 안내 문구를 바꾼다.
+            $('#post-title').on('input', function () {
+                $('#post-help').text($(this).val().trim() === '' ? '글 제목을 입력해 주세요.' : '제목을 입력했습니다.');
+            });
+
+            // [이벤트 11: input] 글 내용 입력 시 빈 값과 글자 수 제한을 실시간으로 안내한다.
+            $('#post-content').on('input', function () {
+                var length = $(this).val().trim().length;
+                $('#post-help').text(length === 0 ? '글 내용을 입력해 주세요.' : (length > 200 ? '글 내용은 200자 이내로 작성해 주세요.' : '글을 등록할 수 있습니다.'));
+            });
+
+            // [이벤트 12: click] 글 등록 버튼은 제목/내용의 빈 값과 200자 초과 여부를 검사한다.
+            // 올바른 글은 .text()로 화면에 추가해 입력 문자열이 HTML로 실행되지 않게 한다.
+            $('#add-post').on('click', function () {
+                var title = $('#post-title').val().trim();
+                var content = $('#post-content').val().trim();
+                if (title === '' || content === '') {
+                    $('#post-help').text('제목과 내용을 모두 입력해야 합니다.');
+                    $('#post-status').removeClass('success').addClass('error').text('글을 등록하지 못했습니다. 제목과 내용을 확인해 주세요.');
+                    return;
+                }
+                if (title.length > 30 || content.length > 200) {
+                    $('#post-help').text('제목은 30자, 내용은 200자 이내로 작성해 주세요.');
+                    $('#post-status').removeClass('success').addClass('error').text('입력 글자 수가 제한을 넘었습니다.');
+                    return;
+                }
+                var $post = $('<li>');
+                $post.append($('<strong>').text(title + ' : '));
+                $post.append($('<span>').text(content));
+                $('#post-list').prepend($post);
+                $('#post-title, #post-content').val('');
+                $('#post-help').text('글이 등록되었습니다.');
+                $('#post-status').removeClass('error').addClass('success').text('휴식 기록 글이 등록되었습니다.');
+            });
+
+            // [이벤트 13: submit] 상단 검색 폼은 예제의 모양을 유지하되 페이지가 새로고침되지 않도록 막는다.
+            $('.search-form').on('submit', function (event) {
+                event.preventDefault();
+                $('#status-message').removeClass('error').text('이 미니 페이지에서는 검색 기능을 사용하지 않습니다.');
+            });
+
+            drawBoard();
+        });
+    </script>
+</head>
+<body>
+    <div id="page-wrapper">
+        <header id="main-header">
+            <hgroup>
+                <h1 class="master-title">짧은 휴식, 미니 스도쿠</h1>
+                <h2 class="master-description">잠깐의 집중력 전환을 위한 숫자 퍼즐</h2>
+            </hgroup>
+        </header>
+
+        <!-- 교재 예제의 내비게이션과 드롭다운 메뉴 구조를 유지 -->
+        <nav id="main-navigation">
+            <div class="pull-left">
+                <ul class="outer-menu">
+                    <li class="outer-menu-item">
+                        <span class="menu-title">스도쿠</span>
+                        <ul class="inner-menu">
+                            <li class="inner-menu-item"><a href="#game">퍼즐 풀기</a></li>
+                            <li class="inner-menu-item"><a href="#records">풀이 기록</a></li>
+                        </ul>
+                    </li>
+                    <li class="outer-menu-item">
+                        <span class="menu-title">도움말</span>
+                        <ul class="inner-menu">
+                            <li class="inner-menu-item"><a href="#guide">게임 방법</a></li>
+                            <li class="inner-menu-item"><a href="#memo">메모하기</a></li>
+                        </ul>
+                    </li>
+                    <li class="outer-menu-item">
+                        <span class="menu-title">난이도</span>
+                        <ul class="inner-menu">
+                            <li class="inner-menu-item"><a href="#game">쉬움 / 보통</a></li>
+                            <li class="inner-menu-item"><a href="#game">어려움</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="pull-right">
+                <div class="search-bar">
+                    <form class="search-form">
+                        <input type="text" class="input-search" placeholder="검색어">
+                        <input type="submit" class="input-search-submit" value="검색">
+                    </form>
+                </div>
+            </div>
+        </nav>
+
+        <div id="content">
+            <section id="main-section">
+                <article id="game">
+                    <div class="article-header">
+                        <h2 class="article-title">오늘의 미니 스도쿠</h2>
+                        <p class="article-description">원하는 난이도를 고르고 빈칸을 채워 보세요.</p>
+                    </div>
+                    <div class="article-body">
+                        <p class="intro">가볍게 머리를 환기하고 싶을 때 즐기는 9×9 스도쿠입니다. 각 가로줄, 세로줄, 3×3 영역에는 1부터 9까지 숫자가 한 번씩만 들어가야 합니다.</p>
+
+                        <div class="game-panel">
+                            <div class="game-toolbar">
+                                <div class="difficulty-wrap">
+                                    <label for="difficulty">난이도</label>
+                                    <select id="difficulty">
+                                        <option value="easy">쉬움</option>
+                                        <option value="normal">보통</option>
+                                        <option value="hard">어려움</option>
+                                    </select>
+                                </div>
+                                <span id="level-description">쉬움 · 빈칸 30개 · 가볍게 시작해 보세요.</span>
+                            </div>
+
+                            <div class="game-layout">
+                                <div class="board-wrap">
+                                    <div id="sudoku-board" aria-label="스도쿠 보드"></div>
+                                </div>
+                                <div class="side-controls">
+                                    <h3 class="control-title">숫자 입력</h3>
+                                    <p class="help-text">보드의 빈칸을 선택한 뒤 숫자를 누르거나 칸에 직접 입력하세요.</p>
+                                    <div class="number-pad">
+                                        <button type="button" class="number-button" data-number="1">1</button>
+                                        <button type="button" class="number-button" data-number="2">2</button>
+                                        <button type="button" class="number-button" data-number="3">3</button>
+                                        <button type="button" class="number-button" data-number="4">4</button>
+                                        <button type="button" class="number-button" data-number="5">5</button>
+                                        <button type="button" class="number-button" data-number="6">6</button>
+                                        <button type="button" class="number-button" data-number="7">7</button>
+                                        <button type="button" class="number-button" data-number="8">8</button>
+                                        <button type="button" class="number-button" data-number="9">9</button>
+                                    </div>
+                                    <div class="button-row">
+                                        <button type="button" id="clear-cell" class="action-button secondary">선택 칸 지우기</button>
+                                    </div>
+                                    <div class="button-row">
+                                        <button type="button" id="check-answer" class="action-button">정답 확인</button>
+                                        <button type="button" id="reset-game" class="action-button secondary">초기화</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p id="status-message" class="status" role="status">빈칸을 선택하고 숫자를 입력해 보세요.</p>
+
+                            <div class="post-area">
+                                <h3 class="control-title">짧은 휴식 기록 글쓰기</h3>
+                                <input type="text" id="post-title" maxlength="35" placeholder="글 제목 (최대 30자)">
+                                <textarea id="post-content" maxlength="220" placeholder="오늘의 풀이 소감이나 다음에 확인할 내용을 적어 보세요."></textarea>
+                                <div class="button-row">
+                                    <button type="button" id="add-post" class="action-button">글 등록</button>
+                                </div>
+                                <p id="post-help" class="small-note">제목과 내용을 입력해 주세요. (제목 30자, 내용 200자 이내)</p>
+                                <p id="post-status" class="small-note" role="status">아직 등록된 글이 없습니다.</p>
+                                <ul id="post-list"></ul>
+                            </div>
+
+                            <div class="memo-area" id="memo">
+                                <h3 class="control-title">풀이 메모</h3>
+                                <p class="help-text">메모 위치: <strong id="memo-target">선택된 칸 없음</strong> · 칸을 선택하지 않으면 전체 메모로 등록됩니다.</p>
+                                <textarea id="memo-input" maxlength="140" placeholder="예: 4행 8열 6 (해당 칸에 작은 후보 숫자 표시) 또는 일반 메모"></textarea>
+                                <div class="button-row">
+                                    <button type="button" id="add-memo" class="action-button">메모 등록</button>
+                                </div>
+                                <p id="memo-help" class="small-note">메모 내용을 입력해 주세요.</p>
+                                <ul id="memo-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article id="guide">
+                    <div class="article-header">
+                        <h2 class="article-title">게임 방법</h2>
+                    </div>
+                    <div class="article-body">
+                        <p class="intro">1. 난이도를 선택합니다. 2. 빈칸을 클릭하고 1~9 중 하나를 입력합니다. 3. 같은 행·열·3×3 영역에 숫자가 겹치지 않도록 합니다. 4. 풀이가 끝나면 정답 확인을 누릅니다.</p>
+                    </div>
+                </article>
+            </section>
+
+            <aside id="main-aside">
+                <div class="aside-list">
+                    <h3>연습 안내</h3>
+                    <ul>
+                        <li><a href="#game">난이도별 퍼즐</a></li>
+                        <li><a href="#guide">스도쿠 규칙</a></li>
+                        <li><a href="#memo">풀이 메모</a></li>
+                    </ul>
+                </div>
+                <div class="aside-list" id="records">
+                    <h3>풀이 기록</h3>
+                    <ul id="record-list">
+                        <li>아직 완료한 기록이 없습니다.</li>
+                    </ul>
+                </div>
+                <div class="aside-list">
+                    <h3>짧은 휴식 팁</h3>
+                    <p class="small-note">막히면 잠깐 화면에서 눈을 떼고, 다시 한 줄씩 확인해 보세요.</p>
+                </div>
+            </aside>
+        </div>
+
+        <footer id="main-footer">
+            <p class="small-note">Mini Sudoku · 잠깐 쉬어 가며 집중력을 충전하세요.</p>
+        </footer>
+    </div>
+</body>
+</html>
